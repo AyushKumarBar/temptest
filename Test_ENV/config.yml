@@ -33,7 +33,7 @@ models:
       - title_suggest
       - dayparts
       - like_count
-      - view_count      
+      - view_count
 
 features:
   - name: title
@@ -70,7 +70,7 @@ features:
       - afternoon
       - evening
       - night
-     
+
   - name: like_count
     type: number
     scope: item
@@ -81,23 +81,20 @@ features:
     scope: item
     source: item.view_count
 
-
-    # interaction
-
- - name: ctr
+  - name: ctr
     type: rate
     top: click
     bottom: impression
     scope: item
     bucket: 24h
-    periods: [7,30]
+    periods: [7, 30]
     normalize:
       weight: 10
 
   - name: profile
     type: interacted_with
     interaction: click
-    field: [ item.club_id, item.category_id, item.dayparts]
+    field: [item.club_id, item.category_id, item.dayparts]
     scope: session
     count: 100
     duration: 24h
@@ -133,5 +130,4 @@ features:
     interaction: click
     scope: item
     bucket: 24h
-    periods: [7,30]
-
+    periods: [7, 30]
