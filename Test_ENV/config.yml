@@ -1,0 +1,157 @@
+# bootstrap:
+#   source:
+#     type: file
+#     path: /blog
+#   workdir: /tmp/bootstrap
+
+core:
+  clickthrough:
+    maxParallelSessions: 10000
+    maxSessionLength: 30m 
+  tracking:
+    analytics: true
+    errors: true
+
+inference:
+  port: 8080
+  host: "0.0.0.0"
+  source:
+    type: rest
+  state:
+    type: redis
+    host: localhost
+    format: json
+
+models:
+  similar:
+    type: als
+    interactions: [click]
+    factors: 100
+    iterations: 100
+
+trending:
+  type: trending
+  weights:
+    - interaction: click
+      decay: 1.0
+      weight: 1.0
+
+xgboost:
+  type: lambdamart
+  backend:
+    type: lightgbm
+    iterations: 500
+    ndcgCutoff: 10
+    seed: 0
+  weights:
+    click: 1
+  features:
+    - title
+    - club_id
+    - category_id
+    - post_type
+    - title_suggest
+    - dayparts
+    - like_count
+    - view_count      
+
+features:
+  - name: title
+    type: string
+    scope: item
+    source: item.title
+
+  - name: club_id
+    type: string
+    scope: item
+    source: item.club_id
+
+  - name: category_id
+    type: string
+    scope: item
+    source: item.category_id
+
+  - name: post_type
+    type: string
+    scope: item
+    source: item.post_type
+
+  - name: title_suggest
+    type: string
+    scope: item
+    source: item.title_suggest
+
+  - name: dayparts
+    type: string
+    scope: item
+    source: item.dayparts
+    values:
+      - morning
+      - afternoon
+      - evening
+      - night
+     
+  - name: like_count
+    type: number
+    scope: item
+    source: item.like_count
+
+  - name: view_count
+    type: number
+    scope: item
+    source: item.view_count
+
+
+    # interaction
+
+ - name: ctr
+    type: rate
+    top: click
+    bottom: impression
+    scope: item
+    bucket: 24h
+    periods: [7,30]
+    normalize:
+      weight: 10
+
+  - name: profile
+    type: interacted_with
+    interaction: click
+    field: [ item.club_id, item.category_id, item.dayparts]
+    scope: session
+    count: 100
+    duration: 24h
+
+  - name: club_id
+    type: interacted_with
+    interaction: click
+    field: item.club_id
+    scope: session
+    count: 10
+    duration: 24h
+
+  - name: category_id
+    type: interacted_with
+    interaction: click
+    field: item.category_id
+    scope: session
+    count: 10
+    duration: 24h
+
+  - name: visitor_click_count
+    type: interaction_count
+    interaction: click
+    scope: session
+
+  - name: global_item_click_count
+    type: interaction_count
+    interaction: click
+    scope: item
+
+  - name: blog_item_click_count
+    type: window_count
+    interaction: click
+    scope: item
+    bucket: 24h
+    periods: [7,30]
+
