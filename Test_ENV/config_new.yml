@@ -1,0 +1,182 @@
+core:
+  clickthrough:
+    maxSessionLength: 60s
+
+models:
+  similar:
+    type: als
+    interaction: click
+    factors: 100
+    iterations: 300
+
+  trending:
+    type: trending
+    weights:
+      - interaction: click
+        decay: 1.0
+        weight: 10.0
+
+  xgboost:
+    type: lambdamart
+    backend:
+      type: lightgbm
+      iterations: 100
+    weights:
+      click: 10.0
+    features:
+    - title_length
+    - view_count
+    - like_count
+    - divers_description
+    - divers_category_id
+    - divers_club_id
+    - category_id
+    - divers_post_type
+    - post_type
+    - club_id
+    - ctr
+    - clicked
+
+features:
+  - type: string
+    name: category_id
+    field: item.category_id
+    scope: item
+    source: metadata.category_id
+    encode: onehot
+    values:
+      - ''
+      - Chronic Condition
+      - Diet & Nutrition
+      - Emotional Wellness
+      - Female
+      - Fitness
+      - Wellness
+      - Yoga & Meditation
+  - type: interacted_with
+    name: click
+    interaction: click
+    field:
+      - item.title_suggest
+      - item.category_id
+      - item.club_id
+      - item.title
+      - item.description
+      - item.post_type
+    scope: item
+
+  - type: rate
+    name: clicked
+    top: click
+    bottom: impression
+    interaction: clicked
+    field:
+      - item.title_suggest
+      - item.category_id
+      - item.club_id
+      - item.title
+      - item.description
+      - item.post_type
+    bottom: impression
+    scope: item
+    bucket: 60d
+    periods: [7,30]
+    normalize:
+      weight: 10
+
+  - type: string
+    name: club_id
+    field: item.club_id
+    source: metadata.club_id
+    scope: item
+    encode: index
+    values:
+      - ''
+      - Aasanas
+      - Anxiety
+      - Counseling
+      - Energy Healing
+      - Meditation/Dhyana
+      - Mindfulness
+      - Parenting
+      - Personality & Behavioural Issues
+      - Relationship Issues
+      - Stress
+  - type: number
+    name: like_count
+    field: item.like_count
+    scope: item
+  - type: string
+    name: post_type
+    field: item.post_type
+    source: metadata.post_type
+    scope: item
+    encode: onehot
+    values:
+      - article
+      - audio
+      - post
+      - video
+  - type: number
+    name: view_count
+    field: item.view_count
+    scope: item
+    source: metadata.view_count
+  - name: ctr
+    type: rate
+    top: click
+    bottom: impression
+    bucket: 60d
+    periods: [7,30]
+    normalize:
+      weight: 10
+
+  - name: divers_post_type
+    type: diversity
+    source: item.post_type
+
+  - name: divers_description
+    type: diversity
+    source: item.description
+
+  - name: divers_club_id
+    type: diversity
+    source: item.club_id
+
+  - name: divers_category_id
+    type: diversity
+    source: item.category_id
+
+  - name: visitor_click_count
+    type: interaction_count
+    interaction: click
+    scope: session
+
+  - name: user_click_count
+    type: interaction_count
+    interaction: click
+    scope: user
+
+  - name: global_item_click_count
+    type: interaction_count
+    interaction: click
+    scope: item
+
+  - name: day_item_click_count
+    type: window_count
+    interaction: click
+    scope: item
+    bucket: 24h
+    periods: [7,30]
+  
+  - name: clicks
+    type: window_count
+    interaction: click
+    scope: item.title
+    bucket: 24h
+    periods: [7,30]
+
+  - name: title_length
+    type: word_count
+    source: metadata.title
+    scope: item
